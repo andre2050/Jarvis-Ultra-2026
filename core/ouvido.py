@@ -106,7 +106,14 @@ class Ouvido:
                 self._aviso("baixando modelo de fala pt-BR (~40 MB, só na primeira vez)…")
                 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
                 zip_path = CONFIG_DIR / "vosk-pt.zip"
-                urllib.request.urlretrieve(MODELO_URL, zip_path)
+                self._pct_modelo = -1
+
+                def _progresso(n, tam_bloco, total):
+                    pct = min(100, int(n * tam_bloco * 100 / max(1, total)))
+                    if pct != self._pct_modelo:
+                        self._pct_modelo = pct
+                        self._aviso(f"baixando modelo de fala pt-BR… {pct}%")
+                urllib.request.urlretrieve(MODELO_URL, zip_path, reporthook=_progresso)
                 with zipfile.ZipFile(zip_path) as z:
                     z.extractall(CONFIG_DIR / "_vosk_tmp")
                 extraida = next((CONFIG_DIR / "_vosk_tmp").iterdir())

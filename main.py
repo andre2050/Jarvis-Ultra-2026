@@ -7,6 +7,7 @@ Roadmap completo em docs/ROADMAP.md.
 """
 import json
 import queue
+import sys
 import threading
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, ttk
@@ -88,7 +89,7 @@ class App(tk.Tk):
                                  bd=0, font=("Segoe UI", 9, "bold"), cursor="hand2",
                                  padx=8, pady=8, justify=tk.CENTER)
         self.btn_ptt.pack(fill=tk.X)
-        self.btn_ptt.bind("<ButtonPress-1>", lambda e: self.ouvido.segurar())
+        self.btn_ptt.bind("<ButtonPress-1>", lambda e: self._ptt_segurar())
         self.btn_ptt.bind("<ButtonRelease-1>", lambda e: self.ouvido.soltar())
         self.btn_wake = tk.Button(pres, text='☾ WAKE WORD "EI, JARVIS"',
                                   command=self._alternar_wake, bg="#0d121c",
@@ -134,6 +135,16 @@ class App(tk.Tk):
 
     # ---------- escuta ----------
 
+    def _ptt_segurar(self):
+        """Apertou o microfone — se não dá pra escutar, avisa NA CARA."""
+        ok, motivo = self.ouvido.estado()
+        if not ok:
+            messagebox.showinfo(
+                "Microfone indisponível",
+                f"{motivo}\n\nO chat continua funcionando por texto.")
+            return
+        self.ouvido.segurar()
+
     def _ligar_escuta(self):
         self.ouvido.on_frase = self._ouvir_texto
         self.ouvido.on_wake = self._acordado
@@ -144,7 +155,7 @@ class App(tk.Tk):
                 self.ouvido.soltar()
 
         # push-to-talk na janela (global com lib keyboard, se existir)
-        self.bind("<Control-space>", lambda e: (self.ouvido.segurar(), "break")[1])
+        self.bind("<Control-space>", lambda e: (self._ptt_segurar(), "break")[1])
         self.bind("<KeyRelease-space>", lambda e: soltar_se_ativo())
         if not self.ouvido.instalar_hotkey_global(self.ouvido.segurar, soltar_se_ativo):
             self.after(100, lambda: self.lbl_status.config(
@@ -363,8 +374,34 @@ class App(tk.Tk):
         self.destroy()
 
 
+def _garantir_voz():
+    """Primeira execução: instala as libs de escuta faltando e relança."""
+    import os
+    from core import deps
+    if os.environ.get("JARVIS_VOZ_TENTADA") == "1":
+        return                      # já tentou nesta cadeia — não faz loop
+    falta = deps.faltando()
+    if not falta:
+        return
+    os.environ["JARVIS_VOZ_TENTADA"] = "1"
+    janela = tk.Tk()
+    janela.title("J.A.R.V.I.S — preparando a voz")
+    janela.configure(bg="#090d16")
+    lbl = tk.Label(janela, text="Instalando as bibliotecas de voz…\n(uma vez só, ~45 MB)",
+                   font=("Segoe UI", 12), fg="#00e5c7", bg="#090d16", padx=30, pady=24)
+    lbl.pack()
+    janela.update()
+    ok = deps.instalar([pip for pip, _ in falta],
+                       ao_log=lambda m: (lbl.config(text=m + "\n(uma vez só)"), janela.update()))
+    janela.destroy()
+    if ok:
+        os.execl(sys.executable, sys.executable, *sys.argv)
+    # se falhou, o app segue — e avisa na cara na hora de usar o microfone
+
+
 def main():
     try:
+        _garantir_voz()
         App().mainloop()
     except Exception:
         import traceback
