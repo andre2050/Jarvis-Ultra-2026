@@ -18,6 +18,10 @@ com voz à prova de falhas, plugins auto-descritivos e HUD holográfico reativo.
 - 🔇 **Anti-eco** — nunca responde à própria voz
 - 🧠 **Painel de memória** — veja e apague o que ele sabe, por item
 - 🧩 **+4 plugins**: clima, busca web, telemetria de hardware, processador de arquivos
+- 🧩 **+9 plugins de ação** (fusão Neural, sem Mark): abrir apps, lembretes na tela,
+  mensagens WhatsApp/Telegram, YouTube, gerenciar arquivos, controlar o PC
+  (digitar/clicar/atalhos), área de trabalho (papel de parede), voos no Google Flights
+  e navegador pro (playwright)
 
 ### Fundação (v0.1.0)
 

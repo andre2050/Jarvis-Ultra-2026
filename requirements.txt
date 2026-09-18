@@ -7,3 +7,6 @@ pyttsx3
 # vosk               # reconhecimento de fala 100% offline (baixa modelo pt-BR na 1ª vez)
 # keyboard           # Ctrl+Espaço global (Windows/Linux)
 # openwakeword      # wake word 'Ei, Jarvis' (se não tiver, uso Vosk p/ tudo)
+# pyautogui         # controlar o PC (digitar/clicar/atalhos)
+# playwright         # navegador pro (clicar/preencher em sites)
+# send2trash         # apagar arquivo mandando pra lixeira
