@@ -4,6 +4,11 @@ Sem internet, sem chave, sem custo. Function calling nativo para
 modelos com tools (llama3.1+, qwen2.5, mistral-nemo...).
 """
 import json
+import os
+import shutil
+import subprocess
+import sys
+import time
 
 import requests
 
@@ -45,3 +50,53 @@ def chat(host: str, modelo: str, messages: list, tools: list | None = None) -> d
         if fn.get("name"):
             calls.append({"name": fn["name"], "args": args or {}})
     return {"texto": (msg.get("content") or "").strip(), "tool_calls": calls}
+
+
+# ---------- servidor: acha, sobe e espera ----------
+
+_CREATE_NO_WINDOW = 0x08000000 if sys.platform.startswith("win") else 0
+
+
+def _exe_ollama():
+    """Acha o binário do Ollama: PATH primeiro, depois caminhos padrão."""
+    achado = shutil.which("ollama")
+    if achado:
+        return achado
+    if sys.platform.startswith("win"):
+        base = os.path.expandvars(r"%LOCALAPPDATA%\Programs\Ollama")
+        for cand in (os.path.join(base, "ollama.exe"), os.path.join(base, "ollama app.exe")):
+            if os.path.exists(cand):
+                return cand
+    else:
+        for cand in ("/usr/local/bin/ollama", "/opt/homebrew/bin/ollama",
+                     "/Applications/Ollama.app/Contents/Resources/ollama",
+                     "/usr/bin/ollama"):
+            if os.path.exists(cand):
+                return cand
+    return None
+
+
+def instalado() -> bool:
+    return _exe_ollama() is not None
+
+
+def subir_servidor(host: str, esperar_s: int = 20) -> bool:
+    """Garante que o servidor Ollama responde. Se não estiver ligado,
+    sobe 'ollama serve' em segundo plano e espera. True = conectou."""
+    if disponivel(host):
+        return True
+    exe = _exe_ollama()
+    if exe:
+        try:
+            subprocess.Popen(
+                [exe, "serve"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL, creationflags=_CREATE_NO_WINDOW)
+        except Exception:
+            pass
+    prazo = time.time() + esperar_s
+    while time.time() < prazo:
+        if disponivel(host):
+            return True
+        time.sleep(0.5)
+    return disponivel(host)

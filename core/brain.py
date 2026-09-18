@@ -47,6 +47,13 @@ class Cerebro:
             self.historico.append({"role": "user", "content": texto})
             msgs = ([{"role": "system", "content": self._prompt_sistema()}]
                     + self.historico[-JANELA:])
+            if not ollama.subir_servidor(host):
+                if ollama.instalado():
+                    return ("não consegui ligar o servidor Ollama, senhor. "
+                            "Abra o app Ollama no menu Iniciar (ele fica na "
+                            "bandeja, ícone de ovelha) e tente de novo.")
+                return ("o Ollama não está instalado, senhor. Instale em "
+                        "ollama.com/download e tente de novo.")
             try:
                 for rodada in range(MAX_RODADAS_TOOL):
                     if ao_pensar:
@@ -65,7 +72,11 @@ class Cerebro:
                                      "tool_name": chamada["name"]})
                 return "senhor, não consegui concluir essa tarefa com os plugins disponíveis."
             except Exception as e:
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                if status == 404 and "not found" in str(e).lower():
+                    return (f"o cérebro \'{modelo}\' ainda não foi baixado, senhor. "
+                            f"Rode no terminal: ollama pull {modelo}")
                 if "Connection" in str(e) or "refused" in str(e).lower():
-                    return ("estou offline, senhor — o servidor Ollama não responde. "
-                            "Inicie o Ollama no PC e tente de novo.")
+                    return ("perdi a conexão com o servidor Ollama no meio da "
+                            "conversa, senhor. Tente de novo em instantes.")
                 return f"erro no cérebro: {str(e)[:200]}"
