@@ -21,8 +21,9 @@ import struct
 import sys
 import threading
 import time
-import urllib.request
 import zipfile
+
+import requests
 
 from core.config import CONFIG_DIR
 
@@ -55,7 +56,7 @@ except Exception:
     keyboard = None
     TEM_KEYBOARD = False
 
-MODELO_URL = "https://alphacephei.com/vosk/models/vosk-model-small-pt-0.15-0.15.zip"
+MODELO_URL = "https://alphacephei.com/vosk/models/vosk-model-small-pt-0.3.zip"
 MODELO_DIR = CONFIG_DIR / "vosk-model-pt"
 TAXA = 16000
 
@@ -66,6 +67,21 @@ def normalizar(t: str) -> str:
     import unicodedata
     t2 = unicodedata.normalize("NFD", t.lower())
     return "".join(c for c in t2 if not unicodedata.combining(c))
+
+
+def _achar_raiz_modelo(base):
+    """Acha a pasta que o vosk.Model() de fato aceita: precisa ter
+    'final.mdl' direto dentro ou em 'am/'. Formatos de zip variam
+    entre versões do modelo (com ou sem pasta 'conf', aninhado ou não) —
+    procurar pelo arquivo real evita pegar um arquivo qualquer (ex.: README)."""
+    if not base.exists():
+        return None
+    for candidata in [base, *base.rglob("*")]:
+        if not candidata.is_dir():
+            continue
+        if (candidata / "final.mdl").exists() or (candidata / "am" / "final.mdl").exists():
+            return candidata
+    return None
 
 
 def _rms(bloco) -> float:
@@ -102,18 +118,27 @@ class Ouvido:
         if vosk is None:
             return
         try:
-            if not (MODELO_DIR / "final.md").exists() and not any(MODELO_DIR.glob("*/README")):
-                self._aviso("baixando modelo de fala pt-BR (~40 MB, só na primeira vez)…")
+            if _achar_raiz_modelo(MODELO_DIR) is None:
+                self._aviso("baixando modelo de fala pt-BR (~31 MB, só na primeira vez)…")
                 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
                 zip_path = CONFIG_DIR / "vosk-pt.zip"
-                self._pct_modelo = -1
-
-                def _progresso(n, tam_bloco, total):
-                    pct = min(100, int(n * tam_bloco * 100 / max(1, total)))
-                    if pct != self._pct_modelo:
-                        self._pct_modelo = pct
-                        self._aviso(f"baixando modelo de fala pt-BR… {pct}%")
-                urllib.request.urlretrieve(MODELO_URL, zip_path, reporthook=_progresso)
+                # timeout real: conectar em até 10s, e qualquer trecho sem
+                # dados por 30s desiste — nunca fica "baixando" pra sempre
+                resp = requests.get(MODELO_URL, stream=True, timeout=(10, 30))
+                resp.raise_for_status()
+                total = int(resp.headers.get("Content-Length", 0)) or 1
+                baixado = 0
+                pct_ant = -1
+                with open(zip_path, "wb") as fh:
+                    for bloco in resp.iter_content(chunk_size=262144):
+                        if not bloco:
+                            continue
+                        fh.write(bloco)
+                        baixado += len(bloco)
+                        pct = min(100, int(baixado * 100 / total))
+                        if pct != pct_ant:
+                            pct_ant = pct
+                            self._aviso(f"baixando modelo de fala pt-BR… {pct}%")
                 with zipfile.ZipFile(zip_path) as z:
                     z.extractall(CONFIG_DIR / "_vosk_tmp")
                 extraida = next((CONFIG_DIR / "_vosk_tmp").iterdir())
@@ -128,7 +153,10 @@ class Ouvido:
                 os.rename(extraida, MODELO_DIR)
                 zip_path.unlink(missing_ok=True)
                 (CONFIG_DIR / "_vosk_tmp").rmdir()
-            real = MODELO_DIR if (MODELO_DIR / "conf").exists() else next(MODELO_DIR.iterdir())
+            real = _achar_raiz_modelo(MODELO_DIR)
+            if real is None:
+                raise RuntimeError("modelo baixado mas incompleto — apague a "
+                                    f"pasta {MODELO_DIR} e tente de novo")
             vosk.SetLogLevel(-1)
             self._modelo = vosk.Model(str(real))
             TEM_VOSK = True
