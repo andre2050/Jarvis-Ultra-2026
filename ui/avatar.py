@@ -36,11 +36,12 @@ class Avatar(tk.Canvas):
     """Cabeça holográfica. Estados: pensando/ouvindo/falando/dormindo."""
 
     def __init__(self, master, size: int = 360, **kw):
-        try:
-            bg = master.cget("bg")
-        except Exception:
-            bg = "#090d16"
-        super().__init__(master, width=size, height=size, bg=bg,
+        if "bg" not in kw:
+            try:
+                kw["bg"] = master.cget("bg")
+            except Exception:
+                kw["bg"] = "#090d16"
+        super().__init__(master, width=size, height=size,
                          highlightthickness=0, **kw)
         self.size = size
         self.cor = "#00e5c7"

@@ -31,25 +31,27 @@ from core.config import CONFIG_DIR
 try:
     import numpy  # sounddevice devolve numpy arrays
     TEM_NUMPY = True
-except ImportError:
+except Exception:
     TEM_NUMPY = False
 
 try:
     import sounddevice as sd
     TEM_SOM = True
-except ImportError:
+except Exception:
+    # cobre ImportError (lib ausente) e OSError (DLL/lib do PortAudio
+    # ausente ou quebrada, ex.: Redistributable do Windows faltando)
     TEM_SOM = False
 
 try:
     import vosk
     TEM_VOSK = False          # só vira True com modelo baixado
-except ImportError:
+except Exception:
     vosk = None
 
 try:
     import keyboard
     TEM_KEYBOARD = sys.platform.startswith("win") or sys.platform.startswith("linux")
-except ImportError:
+except Exception:
     keyboard = None
     TEM_KEYBOARD = False
 

@@ -13,11 +13,12 @@ import tkinter as tk
 
 class Hud(tk.Canvas):
     def __init__(self, master, size: int = 340, **kw):
-        try:
-            bg = master.cget("bg")
-        except Exception:
-            bg = "#090d16"
-        super().__init__(master, width=size, height=size, bg=bg,
+        if "bg" not in kw:
+            try:
+                kw["bg"] = master.cget("bg")
+            except Exception:
+                kw["bg"] = "#090d16"
+        super().__init__(master, width=size, height=size,
                          highlightthickness=0, **kw)
         self.size = size
         self.cor = "#00e5c7"          # recolorível ao vivo
@@ -44,7 +45,7 @@ class Hud(tk.Canvas):
         s, cx, cy = self.size, self.size / 2, self.size / 2
         r = s * 0.40
         # glow radial (halos com alpha caindo)
-        for dist, stip, w in ((1.14, "gray12", 9), (1.07, "gray25", 6), (1.02, "gray37", 3)):
+        for dist, stip, w in ((1.14, "gray12", 9), (1.07, "gray25", 6), (1.02, "gray50", 3)):
             self.create_oval(cx - r * dist, cy - r * dist, cx + r * dist, cy + r * dist,
                              outline=self.cor, width=w, stipple=stip)
         # anéis concêntricos

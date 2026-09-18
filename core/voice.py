@@ -15,7 +15,7 @@ import threading
 try:
     import pyttsx3
     TEM_PYTTSX3 = True
-except ImportError:
+except Exception:
     TEM_PYTTSX3 = False
 
 
