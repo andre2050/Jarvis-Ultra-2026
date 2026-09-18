@@ -1,3 +1,9 @@
 requests
 psutil
 pyttsx3
+
+# ---- presença v0.2.0 (opcionais — cada um ausente é reportado, nada quebra) ----
+# sounddevice        # microfone (push-to-talk e wake word)
+# vosk               # reconhecimento de fala 100% offline (baixa modelo pt-BR na 1ª vez)
+# keyboard           # Ctrl+Espaço global (Windows/Linux)
+# openwakeword      # wake word 'Ei, Jarvis' (se não tiver, uso Vosk p/ tudo)

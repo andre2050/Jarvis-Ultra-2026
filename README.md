@@ -5,7 +5,21 @@ com voz à prova de falhas, plugins auto-descritivos e HUD holográfico reativo.
 
 > Reconstruído do zero em setembro de 2026 — sem herança de bugs do projeto anterior.
 
-## Estado atual (v0.1.0 — fundação)
+## Estado atual (v0.2.0 — VOZ E PRESENÇA)
+
+**Tudo da fundação, mais o rosto:**
+
+- 🧑‍🎤 **Avatar holográfico** — cabeça humana animada por software: dublagem real
+  (~50 formas de boca/s a partir dos visemas do texto), sobrancelhas, olhar,
+  piscadas, acenos. Rosto como status: pensa, ouve, fala, dorme
+- 🎙 **Wake word local** — "Ei, Jarvis" detectado no próprio PC (openwakeword;
+  sem openwakeword, o Vosk ouve tudo e filtra na mão)
+- ⌨️ **Push-to-talk global** — Ctrl+Espaço em qualquer app
+- 🔇 **Anti-eco** — nunca responde à própria voz
+- 🧠 **Painel de memória** — veja e apague o que ele sabe, por item
+- 🧩 **+4 plugins**: clima, busca web, telemetria de hardware, processador de arquivos
+
+### Fundação (v0.1.0)
 
 - 🧠 **Cérebro Ollama offline** com function calling (llama3.1+, qwen2.5, mistral-nemo…)
 - 🧩 **Plugins auto-descritivos** — arraste um `.py` em `plugins/`, vira habilidade na próxima inicialização
@@ -19,7 +33,8 @@ com voz à prova de falhas, plugins auto-descritivos e HUD holográfico reativo.
 ## Rodar
 
 ```bash
-pip install requests psutil pyttsx3
+pip install -r requirements.txt   # requests · psutil · pyttsx3
+# presença v0.2.0 (recomendado): pip install sounddevice vosk keyboard openwakeword
 # instale o Ollama em https://ollama.com e: ollama pull llama3.2
 python main.py
 ```
